@@ -1,0 +1,2099 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>智能考试系统</title>
+    <style>
+        /* ===== 简约样式 ===== */
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background:#f0f4f9; min-height:100vh; display:flex; justify-content:center; align-items:center; padding:20px; }
+        .app { width:100%; max-width:1200px; background:#fff; border-radius:32px; padding:30px; box-shadow:0 20px 60px rgba(0,0,0,0.12); }
+        .header { display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eef3f8; padding-bottom:16px; margin-bottom:28px; }
+        .logo { font-size:24px; font-weight:700; color:#1a2b3e; }
+        .logo span { color:#4a7cf7; }
+        .btn { padding:8px 20px; border:none; border-radius:40px; font-size:14px; font-weight:600; cursor:pointer; background:#eef3f8; color:#1a2b3e; transition:0.2s; }
+        .btn-primary { background:#4a7cf7; color:#fff; }
+        .btn-primary:hover { background:#3a66d9; }
+        .btn-success { background:#2ecc71; color:#fff; }
+        .btn-success:hover { background:#27ae60; }
+        .btn-danger { background:#e74c5e; color:#fff; }
+        .btn-danger:hover { background:#c0392b; }
+        .btn-outline { background:transparent; border:2px solid #d0d9e3; }
+        .btn-outline:hover { border-color:#4a7cf7; color:#4a7cf7; }
+        .btn-sm { padding:5px 14px; font-size:13px; }
+        .view { display:none; }
+        .view.active { display:block; }
+        .toast { position:fixed; top:20px; right:20px; z-index:9999; background:#333; color:#fff; padding:12px 24px; border-radius:12px; font-size:14px; box-shadow:0 8px 24px rgba(0,0,0,0.2); animation:slideIn 0.3s; }
+        .toast-success { background:#2ecc71; }
+        .toast-error { background:#e74c5e; }
+        @keyframes slideIn { from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:translateX(0); } }
+        .login-wrapper { max-width:420px; margin:40px auto; text-align:center; }
+        .login-wrapper h2 { font-size:28px; margin-bottom:8px; }
+        .login-wrapper .sub { color:#7a8b9f; margin-bottom:24px; }
+        .login-form { background:#f8fafc; border-radius:20px; padding:32px 28px; text-align:left; }
+        .form-group { margin-bottom:20px; }
+        .form-group label { display:block; font-weight:600; font-size:14px; margin-bottom:6px; }
+        .form-group input, .form-group textarea, .form-group select { width:100%; padding:12px 16px; border:2px solid #dfe6ef; border-radius:12px; font-size:15px; background:#fff; }
+        .form-group input:focus { outline:none; border-color:#4a7cf7; }
+        .login-form .btn { width:100%; padding:14px; font-size:17px; }
+        .login-extra { margin-top:20px; font-size:14px; color:#7a8b9f; }
+        .login-extra a { color:#4a7cf7; cursor:pointer; text-decoration:none; }
+        .login-extra a:hover { text-decoration:underline; }
+        .manage-tabs { display:flex; gap:8px; border-bottom:2px solid #eef3f8; padding-bottom:12px; margin-bottom:24px; flex-wrap:wrap; }
+        .manage-tabs .tab-btn { background:none; border:none; padding:8px 20px; font-size:15px; font-weight:600; color:#7a8b9f; cursor:pointer; border-radius:40px; transition:0.2s; }
+        .manage-tabs .tab-btn.active { background:#4a7cf7; color:#fff; }
+        .manage-tabs .tab-btn:hover:not(.active) { background:#eef3f8; color:#1a2b3e; }
+        .tab-content { display:none; }
+        .tab-content.active { display:block; }
+        .manage-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; margin-bottom:24px; }
+        .manage-header h3 { font-size:22px; }
+        .bank-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px,1fr)); gap:16px; margin-bottom:24px; }
+        .bank-card { background:#fff; border-radius:16px; padding:16px 20px; border:1px solid #e8edf4; }
+        .bank-card .bank-name { font-size:16px; font-weight:700; }
+        .bank-card .bank-meta { font-size:13px; color:#7a8b9f; margin:4px 0 8px; }
+        .bank-card .bank-actions { display:flex; gap:8px; flex-wrap:wrap; }
+        .question-list { margin-top:16px; }
+        .question-item { background:#f8fafc; border-radius:14px; padding:12px 16px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; border-left:4px solid #4a7cf7; }
+        .question-item .q-info { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .question-item .q-type { font-size:11px; font-weight:700; padding:2px 10px; border-radius:40px; background:#e8edf4; }
+        .question-item .q-type.single { background:#dbeafe; color:#1a56db; }
+        .question-item .q-type.multi { background:#fef3c7; color:#b45309; }
+        .question-item .q-type.judge { background:#d1fae5; color:#065f46; }
+        .question-item .q-type.fill { background:#fce4ec; color:#b91c1c; }
+        .question-item .q-type.essay { background:#ede9fe; color:#5b21b6; }
+        .question-item .q-text { font-size:14px; color:#1a2b3e; max-width:350px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
+        .question-item .q-text:hover { color:#4a7cf7; }
+        .upload-area { background:#f8fafc; border-radius:16px; padding:24px; margin-bottom:28px; border:2px dashed #dfe6ef; }
+        .upload-area .format-box { background:#fff; border-radius:12px; padding:16px 20px; font-size:13px; border:1px solid #e8edf4; white-space:pre-wrap; line-height:1.7; max-height:200px; overflow-y:auto; margin-bottom:16px; }
+        .upload-row { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+        .file-input-wrap { position:relative; display:inline-block; }
+        .file-input-wrap input[type="file"] { position:absolute; left:0; top:0; opacity:0; width:100%; height:100%; cursor:pointer; }
+        .paper-builder { background:#f8fafc; border-radius:16px; padding:24px; margin-bottom:28px; border:1px solid #e8edf4; }
+        .paper-builder .row { display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin-bottom:14px; }
+        .paper-builder .row label { font-weight:600; min-width:80px; }
+        .paper-builder .row input, .paper-builder .row select { flex:1; min-width:100px; padding:8px 14px; border:2px solid #dfe6ef; border-radius:8px; font-size:14px; }
+        .paper-builder .bank-selector { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; }
+        .paper-builder .bank-selector label { display:flex; align-items:center; gap:6px; font-size:14px; cursor:pointer; }
+        .paper-builder .count-group, .paper-builder .score-group { display:flex; flex-wrap:wrap; gap:12px 24px; margin:8px 0; }
+        .paper-builder .count-group .item, .paper-builder .score-group .item { display:flex; align-items:center; gap:6px; }
+        .paper-builder .count-group .item label, .paper-builder .score-group .item label { font-size:14px; font-weight:500; min-width:50px; }
+        .paper-builder .count-group .item input, .paper-builder .score-group .item input { width:60px; padding:4px 8px; border:2px solid #dfe6ef; border-radius:6px; font-size:14px; text-align:center; }
+        .paper-list { display:flex; flex-wrap:wrap; gap:12px; }
+        .paper-card { background:#fff; border-radius:12px; padding:16px 20px; border:1px solid #e8edf4; flex:1 1 220px; }
+        .paper-card .title { font-weight:600; font-size:16px; }
+        .paper-card .meta { font-size:13px; color:#7a8b9f; margin:4px 0; }
+        .paper-card .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+        .exam-question { background:#f8fafc; border-radius:20px; padding:28px 32px; margin-bottom:24px; }
+        .exam-question .q-number { font-weight:700; color:#4a7cf7; font-size:15px; margin-right:8px; }
+        .exam-question .q-type-tag { font-size:12px; font-weight:700; padding:2px 14px; border-radius:40px; background:#e8edf4; margin-left:6px; }
+        .exam-question .q-body { font-size:17px; margin:14px 0 18px; line-height:1.7; white-space:pre-wrap; }
+        .exam-question .options { display:flex; flex-direction:column; gap:10px; }
+        .exam-question .options label { display:flex; align-items:center; gap:12px; padding:10px 16px; background:#fff; border-radius:12px; border:2px solid #e8edf4; cursor:pointer; transition:0.2s; }
+        .exam-question .options label:hover { border-color:#b0c8e8; background:#fafcff; }
+        .exam-question .options input[type="radio"], .exam-question .options input[type="checkbox"] { width:18px; height:18px; accent-color:#4a7cf7; cursor:pointer; flex-shrink:0; }
+        .exam-question .fill-input { width:100%; max-width:480px; padding:12px 16px; border:2px solid #dfe6ef; border-radius:12px; font-size:15px; margin-top:6px; }
+        .exam-question .essay-textarea { width:100%; min-height:120px; padding:14px 16px; border:2px solid #dfe6ef; border-radius:12px; font-size:15px; resize:vertical; margin-top:6px; }
+        .exam-nav { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; margin-top:8px; }
+        .exam-nav .btn-group { display:flex; gap:10px; }
+        .exam-nav .counter { font-size:14px; color:#4a5b6e; }
+        .result-card { background:#f8fafc; border-radius:24px; padding:32px; text-align:center; margin-bottom:28px; }
+        .result-card .score-circle { width:120px; height:120px; border-radius:50%; background:#4a7cf7; color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 16px; font-size:38px; font-weight:700; }
+        .result-card .score-circle small { font-size:16px; font-weight:400; opacity:0.9; }
+        .result-card .result-status { font-size:20px; font-weight:700; color:#1a2b3e; }
+        .result-detail .detail-item { display:flex; justify-content:space-between; padding:12px 16px; border-bottom:1px solid #eef3f8; flex-wrap:wrap; gap:8px; }
+        .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:9999; }
+        .modal-overlay.active { display:flex; }
+        .modal-box { background:#fff; border-radius:24px; padding:32px 40px; max-width:540px; width:100%; max-height:80vh; overflow-y:auto; }
+        .modal-box h3 { margin-bottom:16px; }
+        .modal-box .form-group { margin-bottom:16px; }
+        .modal-box .form-group label { font-weight:600; font-size:14px; }
+        .modal-box .form-group input, .modal-box .form-group textarea, .modal-box .form-group select { width:100%; padding:10px 14px; border:2px solid #dfe6ef; border-radius:8px; font-size:14px; }
+        .modal-box .btn-row { display:flex; gap:12px; justify-content:flex-end; margin-top:8px; }
+        .modal-box .qr-container { text-align:center; margin:16px 0; }
+        .modal-box .qr-container img { max-width:100%; border:1px solid #eef3f8; border-radius:8px; }
+        .modal-box .link-display { word-break:break-all; font-size:13px; color:#4a7cf7; background:#f0f4f9; padding:8px 12px; border-radius:6px; margin:8px 0; }
+        .records-table { width:100%; border-collapse:collapse; font-size:14px; }
+        .records-table th { background:#f8fafc; padding:12px 16px; text-align:left; border-bottom:2px solid #eef3f8; }
+        .records-table td { padding:10px 16px; border-bottom:1px solid #eef3f8; }
+        .records-table .rank.gold { color:#f39c12; }
+        .records-table .rank.silver { color:#7a8b9f; }
+        .records-table .rank.bronze { color:#cd7f32; }
+        .settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px 40px; background:#f8fafc; border-radius:16px; padding:24px; margin-bottom:28px; }
+        .settings-grid .item { display:flex; flex-direction:column; gap:4px; }
+        .settings-grid .item label { font-weight:600; font-size:14px; }
+        .settings-grid .item input[type="number"], .settings-grid .item input[type="password"] { padding:8px 14px; border:2px solid #dfe6ef; border-radius:8px; font-size:14px; width:100%; max-width:200px; }
+        .settings-grid .item .check-group { display:flex; align-items:center; gap:8px; }
+        .settings-actions { margin-top:8px; }
+        .score-settings { background:#f8fafc; border-radius:16px; padding:20px 24px; margin-bottom:28px; display:flex; flex-wrap:wrap; align-items:center; gap:20px 40px; border:1px solid #e8edf4; }
+        .score-settings .group { display:flex; align-items:center; gap:8px; }
+        .score-settings .group label { font-weight:600; min-width:60px; }
+        .score-settings .group input { width:60px; padding:6px 10px; border:2px solid #dfe6ef; border-radius:8px; text-align:center; }
+        .score-settings .save-btn { margin-left:auto; }
+        @media (max-width:640px) { .settings-grid { grid-template-columns:1fr; } .score-settings .save-btn { margin-left:0; } }
+    </style>
+</head>
+<body>
+    <div class="app" id="app">
+        <!-- 顶部栏 -->
+        <div class="header">
+            <div class="logo">📝 智能<span>考试</span>系统</div>
+            <div id="headerActions"></div>
+        </div>
+
+        <!-- 登录视图 -->
+        <div class="view active" id="viewLogin">
+            <div class="login-wrapper">
+                <h2>📋 考生入口</h2>
+                <p class="sub" id="loginSub">请输入您的信息，开始考试</p>
+                <div class="login-form">
+                    <div class="form-group">
+                        <label>📁 项目名称</label>
+                        <input type="text" id="inputProject" placeholder="如：工程试验考核" />
+                    </div>
+                    <div class="form-group">
+                        <label>👤 姓名</label>
+                        <input type="text" id="inputName" placeholder="请输入您的姓名" maxlength="20" />
+                    </div>
+                    <div class="form-group">
+                        <label>📞 电话号码</label>
+                        <input type="tel" id="inputPhone" placeholder="请输入手机号码" maxlength="15" />
+                    </div>
+                    <button class="btn btn-primary" id="btnStartExam">开始考试 →</button>
+                    <div class="login-extra">
+                        <a id="goToManage">📂 管理后台</a>
+                        &nbsp;·&nbsp;
+                        <span id="examCountInfo" style="color:#7a8b9f;font-size:13px;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 管理后台 -->
+        <div class="view" id="viewManage">
+            <div class="manage-tabs">
+                <button class="tab-btn active" data-tab="tabBanks">📚 题库管理</button>
+                <button class="tab-btn" data-tab="tabPapers">📄 组卷记录</button>
+                <button class="tab-btn" data-tab="tabSettings">⚙️ 系统设置</button>
+                <button class="tab-btn" data-tab="tabScores">📊 成绩与排行榜</button>
+            </div>
+            <!-- 题库管理 -->
+            <div class="tab-content active" id="tabBanks">
+                <div class="manage-header">
+                    <h3>📂 题库管理</h3>
+                    <div>
+                        <button class="btn btn-primary btn-sm" id="btnImport">📤 导入试题</button>
+                        <button class="btn btn-outline btn-sm" id="btnBackFromManage">← 返回</button>
+                    </div>
+                </div>
+                <div class="upload-area" id="uploadArea" style="display:none;">
+                    <div class="label">📤 上传试题文件</div>
+                    <div class="hint">支持 .txt 文件，系统自动提取并解析</div>
+                    <div class="format-box">
+                        <strong>📌 支持的文本格式示例：</strong>
+                        209. 凡岩石颗粒的长度大于该颗粒所属粒级的平均粒径2.4倍者为针状颗粒；厚度小于平均粒径0.4倍者为片状颗粒。【该题涉及GB/T 14685-2022 中3.3条内容】
+                        答案：对
+
+                        1、预应力混凝土用钢绞线（规格：1×7）的最大力总延伸率（L₀ ≥ 500mm）要求大于等于（B）。【该题涉及GB/T 5224-2023中7.2.3条表9内容】
+                        A、2.5%  
+                        B、3.5%  
+                        C、4.5%  
+                        D、5.0%
+                    </div>
+                    <div class="upload-row">
+                        <div class="file-input-wrap">
+                            <button class="btn btn-primary btn-sm">📎 选择文件</button>
+                            <input type="file" id="fileUpload" accept=".txt" />
+                        </div>
+                        <span style="color:#7a8b9f;font-size:13px;">或</span>
+                        <button class="btn btn-success btn-sm" id="btnPasteUpload">📋 粘贴导入</button>
+                        <span style="color:#7a8b9f;font-size:13px;flex:1;" id="uploadStatus">等待上传...</span>
+                    </div>
+                    <div style="margin-top:12px;">
+                        <button class="btn btn-outline btn-sm" id="btnCancelImport">取消导入</button>
+                    </div>
+                </div>
+                <div class="bank-grid" id="bankGrid"></div>
+                <div id="bankDetail" style="display:none;">
+                    <div class="manage-header">
+                        <h4 id="bankDetailTitle">题库名称</h4>
+                        <button class="btn btn-outline btn-sm" id="btnCloseBankDetail">← 返回题库列表</button>
+                    </div>
+                    <div class="question-list" id="bankQuestionList"></div>
+                </div>
+            </div>
+            <!-- 组卷记录 -->
+            <div class="tab-content" id="tabPapers">
+                <div class="manage-header">
+                    <h3>📄 组卷记录</h3>
+                    <button class="btn btn-primary btn-sm" id="btnCreatePaper">➕ 新建组卷</button>
+                </div>
+                <div class="paper-builder" id="paperBuilder" style="display:none;">
+                    <div class="row">
+                        <label>试卷名称</label>
+                        <input type="text" id="paperName" placeholder="如：2025年工程试验考核" />
+                    </div>
+                    <div class="row">
+                        <label>选择题库</label>
+                        <div class="bank-selector" id="bankSelector"></div>
+                    </div>
+                    <div class="row">
+                        <label>各题型抽取数量</label>
+                        <div class="count-group">
+                            <div class="item"><label>单选</label><input type="number" id="countSingle" min="0" value="0" /><span class="hint">(共 <span id="availSingle">0</span> 题)</span></div>
+                            <div class="item"><label>多选</label><input type="number" id="countMulti" min="0" value="0" /><span class="hint">(共 <span id="availMulti">0</span> 题)</span></div>
+                            <div class="item"><label>判断</label><input type="number" id="countJudge" min="0" value="0" /><span class="hint">(共 <span id="availJudge">0</span> 题)</span></div>
+                            <div class="item"><label>填空</label><input type="number" id="countFill" min="0" value="0" /><span class="hint">(共 <span id="availFill">0</span> 题)</span></div>
+                            <div class="item"><label>问答</label><input type="number" id="countEssay" min="0" value="0" /><span class="hint">(共 <span id="availEssay">0</span> 题)</span></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <label>各题型分数</label>
+                        <div class="score-group">
+                            <div class="item"><label>单选</label><input type="number" id="scoreSingle" min="1" value="5" /></div>
+                            <div class="item"><label>多选</label><input type="number" id="scoreMulti" min="1" value="5" /></div>
+                            <div class="item"><label>判断</label><input type="number" id="scoreJudge" min="1" value="5" /></div>
+                            <div class="item"><label>填空</label><input type="number" id="scoreFill" min="1" value="5" /></div>
+                            <div class="item"><label>问答</label><input type="number" id="scoreEssay" min="1" value="5" /></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <button class="btn btn-success" id="btnGeneratePaper">⚡ 生成试卷</button>
+                        <button class="btn btn-outline" id="btnCancelPaper">取消</button>
+                    </div>
+                </div>
+                <div class="paper-list" id="paperList"></div>
+            </div>
+            <!-- 系统设置 -->
+            <div class="tab-content" id="tabSettings">
+                <div class="manage-header">
+                    <h3>⚙️ 系统设置</h3>
+                    <button class="btn btn-success btn-sm" id="btnSaveSettings">💾 保存设置</button>
+                </div>
+                <div class="settings-grid">
+                    <div class="item"><label>管理员密码</label><input type="password" id="adminPassword" placeholder="新密码（留空不修改）" /></div>
+                    <div class="item"><label>考试时间限制（分钟）</label><input type="number" id="examTimeLimit" min="0" value="0" /><span style="font-size:12px;color:#7a8b9f;">0 表示不限时</span></div>
+                    <div class="item"><label>每人考试次数限制</label><input type="number" id="examAttemptLimit" min="0" value="0" /><span style="font-size:12px;color:#7a8b9f;">0 表示不限次数</span></div>
+                    <div class="item"><label>考后显示选项</label>
+                        <div class="check-group"><input type="checkbox" id="showScore" checked /><label for="showScore">显示成绩</label></div>
+                        <div class="check-group"><input type="checkbox" id="showAnswers" checked /><label for="showAnswers">显示答案详情</label></div>
+                    </div>
+                </div>
+                <div class="settings-actions">
+                    <button class="btn btn-outline btn-sm" id="btnResetSettings">恢复默认设置</button>
+                </div>
+            </div>
+            <!-- 成绩管理 -->
+            <div class="tab-content" id="tabScores">
+                <div class="manage-header">
+                    <h3>📊 成绩与排行榜</h3>
+                    <div>
+                        <button class="btn btn-success btn-sm" id="btnExportCSV">📥 导出CSV</button>
+                    </div>
+                </div>
+                <div class="records-toolbar">
+                    <span style="color:#4a5b6e;font-size:14px;" id="recordCount">共 0 条记录</span>
+                    <button class="btn btn-danger btn-sm" id="btnClearRecords">清空记录</button>
+                </div>
+                <div class="records-table-wrap">
+                    <table class="records-table" id="recordsTable">
+                        <thead><tr><th>排名</th><th>项目</th><th>姓名</th><th>电话</th><th>得分</th><th>总分</th><th>正确率</th><th>考试时间</th></tr></thead>
+                        <tbody id="recordsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 考试视图 -->
+        <div class="view" id="viewExam">
+            <div class="exam-header">
+                <div><span style="font-weight:600;font-size:18px;">📝 考试进行中</span> <span class="exam-info" id="examUserInfo"></span></div>
+                <div><span class="exam-progress" id="examProgress">1 / 10</span> <span class="exam-timer" id="examTimer">⏱️ 00:00</span></div>
+            </div>
+            <div id="examQuestionContainer"></div>
+            <div class="exam-nav">
+                <div class="btn-group">
+                    <button class="btn btn-outline btn-sm" id="btnPrev">← 上一题</button>
+                    <button class="btn btn-outline btn-sm" id="btnNext">下一题 →</button>
+                </div>
+                <div class="counter" id="examCounter">第 1 题 / 共 10 题</div>
+                <button class="btn btn-success" id="btnSubmitExam">✅ 交卷</button>
+            </div>
+        </div>
+
+        <!-- 结果视图 -->
+        <div class="view" id="viewResult">
+            <div class="result-wrapper">
+                <div class="result-card" id="resultCard"></div>
+                <div class="result-detail" id="resultDetail"></div>
+                <div class="result-actions">
+                    <button class="btn btn-primary" id="btnReExam">🔄 重新考试</button>
+                    <button class="btn btn-outline" id="btnBackHome">🏠 回到首页</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框：导入 -->
+    <div class="modal-overlay" id="importModal">
+        <div class="modal-box">
+            <h3>📥 导入试题</h3>
+            <p style="color:#7a8b9f;font-size:14px;margin-bottom:16px;">已解析出 <span id="importCount">0</span> 道题，请选择目标题库</p>
+            <div class="form-group">
+                <label>操作方式</label>
+                <select id="importAction">
+                    <option value="new">新建题库</option>
+                    <option value="existing">导入到已有题库</option>
+                </select>
+            </div>
+            <div class="form-group" id="importNewGroup">
+                <label>新题库名称</label>
+                <input type="text" id="importNewName" placeholder="请输入新题库名称" />
+            </div>
+            <div class="form-group" id="importExistingGroup" style="display:none;">
+                <label>选择已有题库</label>
+                <select id="importExistingSelect"></select>
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-outline" id="importCancel">取消</button>
+                <button class="btn btn-primary" id="importConfirm">确认导入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框：编辑题目 -->
+    <div class="modal-overlay" id="editQuestionModal">
+        <div class="modal-box">
+            <h3>✏️ 编辑题目</h3>
+            <div class="form-group"><label>题型</label><select id="editQType"><option value="single">单选题</option><option value="multi">多选题</option><option value="judge">判断题</option><option value="fill">填空题</option><option value="essay">问答题</option></select></div>
+            <div class="form-group"><label>题干</label><textarea id="editQQuestion" rows="3"></textarea></div>
+            <div class="form-group"><label>选项（每行一个）</label><textarea id="editQOptions" rows="4" placeholder="A、选项1&#10;B、选项2&#10;C、选项3&#10;D、选项4"></textarea></div>
+            <div class="form-group"><label>答案</label><input type="text" id="editQAnswer" placeholder="如：B 或 A,B,D" /></div>
+            <div class="form-group"><label>分数</label><input type="number" id="editQScore" min="1" value="5" /></div>
+            <div class="btn-row">
+                <button class="btn btn-outline" id="editQCancel">取消</button>
+                <button class="btn btn-primary" id="editQConfirm">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框：二维码 -->
+    <div class="modal-overlay qr-modal" id="qrModal">
+        <div class="modal-box">
+            <h3>📱 扫描二维码参加考试</h3>
+            <div class="qr-container"><img id="qrCodeImage" src="" alt="二维码" /></div>
+            <div class="link-display" id="qrLinkDisplay"></div>
+            <div class="btn-row">
+                <button class="btn btn-outline" id="qrCloseBtn">关闭</button>
+                <button class="btn btn-primary" id="qrCopyBtn">📋 复制链接</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // 精简稳定版主程序（全部内联，无外部依赖）
+        // ============================================================
+        (function() {
+            'use strict';
+
+            // ---------- 工具 ----------
+            function genId() { return Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 6); }
+            function formatTime(ts) { var d = new Date(ts); return d.toLocaleString('zh-CN', { hour12: false }); }
+            function getTypeLabel(type) { var map = { single: '单选题', multi: '多选题', judge: '判断题', fill: '填空题',
+                    essay: '问答题' }; return map[type] || type; }
+
+            function showToast(msg, type) {
+                type = type || 'info';
+                var div = document.createElement('div');
+                div.className = 'toast toast-' + type;
+                div.textContent = msg;
+                document.body.appendChild(div);
+                setTimeout(function() { if (div.parentNode) div.remove(); }, 3000);
+            }
+
+            // ---------- 数据 ----------
+            var STORAGE_KEY = 'examSystemData';
+
+            function getDefaultData() {
+                return {
+                    banks: [],
+                    papers: [],
+                    exams: [],
+                    settings: { adminPassword: '123456', examTimeLimit: 0, examAttemptLimit: 0, showScore: true,
+                        showAnswers: true, scoreSingle: 5, scoreMulti: 5, scoreJudge: 5, scoreFill: 5,
+                        scoreEssay: 5 },
+                    attemptCounts: {}
+                };
+            }
+
+            function loadData() {
+                try { var raw = localStorage.getItem(STORAGE_KEY); if (raw) { var data = JSON.parse(raw); if (data &&
+                        typeof data === 'object') { data.banks = data.banks || []; data.papers = data.papers || [];
+                        data.exams = data.exams || []; data.settings = data.settings || getDefaultData().settings;
+                        data.attemptCounts = data.attemptCounts || {}; return data; } } } catch (_) {}
+                return getDefaultData();
+            }
+
+            function saveData(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+            // ---------- 全局状态 ----------
+            var appData = loadData();
+            var currentView = 'login';
+            var currentExam = null;
+            var currentResult = null;
+            var isAdmin = false;
+            var viewingBankId = null;
+            var parsedQuestionsForImport = [];
+            var editingPaperId = null;
+            var editingQuestionId = null;
+            var editingQuestionBankId = null;
+
+            // ---------- DOM 快捷 ----------
+            function $(id) { return document.getElementById(id); }
+
+            // ---------- 清理题干（隐藏答案字母） ----------
+            function cleanQuestionText(text) {
+                return text.replace(/[（(]\s*([A-Da-d,，\s]+)\s*[）)]/g, '（）').trim();
+            }
+
+            function removeQuestionNumber(text) {
+                return text.replace(/^\s*\d+[、.．]\s*/, '').trim();
+            }
+
+            // ---------- 解析器 ----------
+            function parseQuestions(text) {
+                var lines = text.split(/\r?\n/).map(function(l) { return l.trim(); }).filter(function(l) { return l; });
+                var result = [];
+                var current = null;
+
+                function isOptionLine(line) { return /^[A-Da-d][、.．)）]\s*/.test(line); }
+
+                function isAnswerLine(line) { return /^答案\s*[:：]/i.test(line); }
+
+                function extractAnswerFromLine(line) { var m = line.match(/^答案\s*[:：]\s*(.*)/i); return m ? m[1].trim() :
+                        ''; }
+
+                function extractAnswerFromText(text) { var m = text.match(/[（(]\s*([A-Da-d,，]+)\s*[）)]/); if (m) { return m[
+                            1].toUpperCase().replace(/[，,]/g, ','); } return ''; }
+
+                function determineType(q) {
+                    var ans = q.answer || '';
+                    var optCount = q.options.length;
+                    if ((ans === '对' || ans === '错' || ans === '√' || ans === '×') && optCount === 0) return 'judge';
+                    if (ans.indexOf(',') !== -1 || (ans.length > 1 && /^[A-D]+$/.test(ans))) return 'multi';
+                    if (optCount > 0 && /^[A-D]$/.test(ans)) return 'single';
+                    if (optCount === 0) return q.question.indexOf('____') !== -1 ? 'fill' : 'essay';
+                    return 'single';
+                }
+
+                function normalizeAnswer(q) {
+                    var ans = q.answer || '';
+                    if (q.type === 'multi') {
+                        if (ans.indexOf(',') === -1) { var parts = ans.split(''); if (parts.every(function(ch) { return /[A-D]/
+                                    .test(ch); })) { ans = parts.join(','); } } else { ans = ans.split(',').map(function(
+                                s) { return s.trim().toUpperCase(); }).join(','); }
+                        var arr = ans.split(',').filter(function(s) { return s; });
+                        arr.sort();
+                        ans = arr.join(',');
+                    } else if (q.type === 'judge') {
+                        var j = ans.toLowerCase();
+                        if (j === '对' || j === '√' || j === 'true' || j === 't' || j === '正确') ans = '对';
+                        else if (j === '错' || j === '×' || j === 'false' || j === 'f' || j === '错误') ans = '错';
+                        else ans = '对';
+                    } else if (q.type === 'single') {
+                        ans = ans.toUpperCase().trim();
+                    }
+                    q.answer = ans;
+                }
+
+                for (var i = 0; i < lines.length; i++) {
+                    var line = lines[i];
+                    if (!line) continue;
+                    if (!current) current = { question: '', options: [], answer: '' };
+                    var isNewQuestion = /^\d+[、.．]\s*/.test(line) && !isOptionLine(line);
+                    if (isNewQuestion && current.question.trim() !== '' && (current.options.length > 0 || current
+                            .answer)) {
+                        if (current.answer) {
+                            var q = {
+                                question: removeQuestionNumber(current.question.trim()),
+                                options: current.options.slice(),
+                                answer: current.answer,
+                                id: genId(),
+                                score: 5
+                            };
+                            q.type = determineType(q);
+                            normalizeAnswer(q);
+                            result.push(q);
+                        }
+                        current = { question: '', options: [], answer: '' };
+                    }
+                    if (isAnswerLine(line)) {
+                        var ans = extractAnswerFromLine(line);
+                        if (ans) current.answer = ans;
+                        continue;
+                    }
+                    if (isOptionLine(line)) {
+                        var optText = line.replace(/^[A-Da-d][、.．)）]\s*/, '').trim();
+                        if (optText) current.options.push(optText);
+                        continue;
+                    }
+                    if (current.question) current.question += '\n' + line;
+                    else current.question = line;
+                    if (!current.answer) {
+                        var extracted = extractAnswerFromText(current.question);
+                        if (extracted) current.answer = extracted;
+                    }
+                }
+                if (current && current.question.trim() !== '' && current.answer) {
+                    var q = {
+                        question: removeQuestionNumber(current.question.trim()),
+                        options: current.options.slice(),
+                        answer: current.answer,
+                        id: genId(),
+                        score: 5
+                    };
+                    q.type = determineType(q);
+                    normalizeAnswer(q);
+                    result.push(q);
+                }
+                return result.filter(function(q) { return q.answer && q.answer.length > 0; });
+            }
+
+            // ---------- 评分引擎 ----------
+            function gradeExam(questions, answers) {
+                var totalScore = 0,
+                    earnedScore = 0;
+                var detail = {};
+                for (var i = 0; i < questions.length; i++) {
+                    var q = questions[i];
+                    var score = q.score || 5;
+                    totalScore += score;
+                    var userAns = answers[q.id] || '';
+                    detail[q.id] = { score: score, earned: 0, correct: false, userAns: userAns, correctAns: q.answer };
+                    if (q.type === 'single') {
+                        if (userAns.trim().toUpperCase() === q.answer.trim().toUpperCase()) {
+                            detail[q.id].earned = score;
+                            detail[q.id].correct = true;
+                        }
+                    } else if (q.type === 'multi') {
+                        var correctSet = new Set(q.answer.split(',').map(function(s) { return s.trim().toUpperCase(); }));
+                        var userSet = new Set(userAns.split(',').map(function(s) { return s.trim().toUpperCase(); }));
+                        if (userSet.size === 0) {
+                            detail[q.id].earned = 0;
+                        } else {
+                            var correctCount = 0,
+                                wrongCount = 0;
+                            userSet.forEach(function(u) {
+                                if (u && correctSet.has(u)) correctCount++;
+                                else if (u) wrongCount++;
+                            });
+                            if (wrongCount > 0) {
+                                detail[q.id].earned = 0;
+                            } else if (correctCount === correctSet.size && correctCount === userSet.size) {
+                                detail[q.id].earned = score;
+                                detail[q.id].correct = true;
+                            } else if (correctCount > 0) {
+                                detail[q.id].earned = Math.round(score * 0.5);
+                            } else {
+                                detail[q.id].earned = 0;
+                            }
+                        }
+                    } else if (q.type === 'judge') {
+                        var u = userAns.trim(),
+                            c = q.answer.trim();
+                        if (u === c || (u === '对' && c === '√') || (u === '错' && c === '×')) {
+                            detail[q.id].earned = score;
+                            detail[q.id].correct = true;
+                        }
+                    } else if (q.type === 'fill') {
+                        var u = userAns.trim(),
+                            c = q.answer.trim();
+                        if (u.toLowerCase() === c.toLowerCase()) {
+                            detail[q.id].earned = score;
+                            detail[q.id].correct = true;
+                        } else {
+                            var keywords = c.split(/[，,、\s]+/).filter(function(k) { return k.length > 1; });
+                            if (keywords.length > 0) {
+                                var matchCount = 0;
+                                for (var j = 0; j < keywords.length; j++) {
+                                    if (u.toLowerCase().indexOf(keywords[j].toLowerCase()) !== -1) matchCount++;
+                                }
+                                if (matchCount >= keywords.length) {
+                                    detail[q.id].earned = Math.round(score * 0.8);
+                                } else if (matchCount > 0) {
+                                    detail[q.id].earned = Math.round(score * 0.4);
+                                }
+                            }
+                        }
+                    } else if (q.type === 'essay') {
+                        detail[q.id].earned = 0;
+                        detail[q.id].correct = false;
+                    }
+                    earnedScore += detail[q.id].earned;
+                }
+                return { totalScore: totalScore, earnedScore: earnedScore, detail: detail };
+            }
+
+            // ---------- 渲染视图切换 ----------
+            function switchView(view) {
+                currentView = view;
+                document.querySelectorAll('.view').forEach(function(el) { el.classList.remove('active'); });
+                var target = document.getElementById('view' + view.charAt(0).toUpperCase() + view.slice(1));
+                if (target) target.classList.add('active');
+                renderHeader();
+                if (view === 'login') renderLogin();
+                else if (view === 'manage') {
+                    if (!isAdmin) { showToast('请先登录管理后台', 'warning');
+                        switchView('login'); return; }
+                    // 默认显示题库tab
+                    document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
+                    document.querySelectorAll('.tab-btn').forEach(function(el) { el.classList.remove('active'); });
+                    var banksTab = document.getElementById('tabBanks');
+                    var banksBtn = document.querySelector('.tab-btn[data-tab="tabBanks"]');
+                    if (banksTab) banksTab.classList.add('active');
+                    if (banksBtn) banksBtn.classList.add('active');
+                    renderBanks();
+                    renderPapers();
+                    renderRecords();
+                    loadSystemSettings();
+                    setupUploadEvents();
+                    // 模态框绑定
+                    document.getElementById('importCancel').onclick = closeImportModal;
+                    document.getElementById('importConfirm').onclick = confirmImport;
+                    document.getElementById('importModal').addEventListener('click', function(e) {
+                        if (e.target === this) closeImportModal();
+                    });
+                    document.getElementById('editQCancel').onclick = closeEditQuestion;
+                    document.getElementById('editQConfirm').onclick = saveEditQuestion;
+                    document.getElementById('editQuestionModal').addEventListener('click', function(e) {
+                        if (e.target === this) closeEditQuestion();
+                    });
+                    document.getElementById('qrCloseBtn').onclick = closeQRModal;
+                    document.getElementById('qrModal').addEventListener('click', function(e) {
+                        if (e.target === this) closeQRModal();
+                    });
+                    // tab切换
+                    document.querySelectorAll('.tab-btn').forEach(function(btn) {
+                        btn.onclick = function() {
+                            var tabId = this.dataset.tab;
+                            document.querySelectorAll('.tab-content').forEach(function(el) { el.classList
+                                    .remove('active'); });
+                            document.querySelectorAll('.tab-btn').forEach(function(el) { el.classList
+                                    .remove('active'); });
+                            var target = document.getElementById(tabId);
+                            if (target) target.classList.add('active');
+                            this.classList.add('active');
+                            if (tabId === 'tabScores') renderRecords();
+                            if (tabId === 'tabBanks') {
+                                renderBanks();
+                                document.getElementById('bankDetail').style.display = 'none';
+                                document.getElementById('bankGrid').style.display = 'grid';
+                            }
+                            if (tabId === 'tabPapers') renderPapers();
+                            if (tabId === 'tabSettings') loadSystemSettings();
+                        };
+                    });
+                    document.getElementById('btnSaveSettings').onclick = saveSystemSettings;
+                    document.getElementById('btnResetSettings').onclick = resetSystemSettings;
+                    document.getElementById('btnCreatePaper').onclick = function() { showPaperBuilder(); };
+                    document.getElementById('btnBackFromManage').onclick = function() { isAdmin = false;
+                        switchView('login'); };
+                } else if (view === 'exam') {
+                    renderExam();
+                    startTimer();
+                } else if (view === 'result') {
+                    renderResult();
+                }
+            }
+
+            function renderHeader() {
+                var html = '';
+                if (currentView === 'login') {
+                    html = '<button class="btn btn-outline btn-sm" id="headerGoManage">📂 管理后台</button>';
+                } else if (currentView === 'manage') {
+                    var totalQuestions = 0;
+                    appData.banks.forEach(function(b) { totalQuestions += b.questions.length; });
+                    html = '<span>📚 总题数 ' + totalQuestions + '</span> <button class="btn btn-outline btn-sm" id="headerGoLogin">🏠 返回首页</button>';
+                } else if (currentView === 'exam') {
+                    var user = currentExam ? currentExam.user : null;
+                    var name = user ? user.name : '考生';
+                    html = '<span>👤 ' + name + '</span> <button class="btn btn-outline btn-sm" id="headerGoLogin">🚪 退出</button>';
+                } else if (currentView === 'result') {
+                    html = '<span>📊 考试完成</span> <button class="btn btn-outline btn-sm" id="headerGoLogin">🏠 首页</button>';
+                }
+                document.getElementById('headerActions').innerHTML = html;
+                var goManage = document.getElementById('headerGoManage');
+                if (goManage) goManage.addEventListener('click', function() {
+                    if (isAdmin) { switchView('manage'); } else { openAdminLogin(); }
+                });
+                var goLogin = document.getElementById('headerGoLogin');
+                if (goLogin) goLogin.addEventListener('click', function() {
+                    if (currentView === 'exam' && !confirm('确定要退出考试吗？进度将丢失。')) return;
+                    if (currentView === 'manage') isAdmin = false;
+                    switchView('login');
+                });
+            }
+
+            // ---------- 登录 ----------
+            function renderLogin() {
+                var info = document.getElementById('examCountInfo');
+                var totalQuestions = 0;
+                appData.banks.forEach(function(b) { totalQuestions += b.questions.length; });
+                info.textContent = totalQuestions > 0 ? '📖 题库共 ' + totalQuestions + ' 道题' : '📭 暂无试题，请先上传';
+                var params = new URLSearchParams(window.location.search);
+                var paperCode = params.get('paper');
+                var sub = document.getElementById('loginSub');
+                if (paperCode) {
+                    var paper = appData.papers.find(function(p) { return p.id === paperCode; });
+                    if (paper) { sub.textContent = '📄 正在参加考试：' + paper.name; } else { sub.textContent =
+                            '⚠️ 试卷码无效，请检查链接'; }
+                } else {
+                    sub.textContent = '请输入您的信息，开始考试';
+                }
+                document.getElementById('btnStartExam').onclick = startExam;
+                document.getElementById('goToManage').onclick = function() {
+                    if (isAdmin) { switchView('manage'); } else { openAdminLogin(); }
+                };
+                ['inputProject', 'inputName', 'inputPhone'].forEach(function(id) {
+                    var el = document.getElementById(id);
+                    if (el) el.addEventListener('keydown', function(e) { if (e.key === 'Enter') startExam(); });
+                });
+                loadScoreSettings();
+                loadSystemSettings();
+            }
+
+            // ---------- 管理登录 ----------
+            function openAdminLogin() {
+                var pass = prompt('请输入管理员密码：');
+                if (pass !== null) {
+                    var settings = appData.settings || {};
+                    var storedPass = settings.adminPassword || '123456';
+                    if (pass === storedPass) {
+                        isAdmin = true;
+                        switchView('manage');
+                        showToast('登录成功', 'success');
+                    } else {
+                        showToast('密码错误', 'error');
+                    }
+                }
+            }
+
+            // ---------- 题库管理 ----------
+            function renderBanks() {
+                var container = document.getElementById('bankGrid');
+                if (!container) return;
+                if (appData.banks.length === 0) {
+                    container.innerHTML =
+                        '<div class="empty-state"><div class="icon">📚</div><h4>暂无题库</h4><p>点击“导入试题”创建第一个题库</p></div>';
+                } else {
+                    var html = '';
+                    appData.banks.forEach(function(bank) {
+                        var qCount = bank.questions.length;
+                        html +=
+                            '<div class="bank-card"><div class="bank-name">' + bank.name +
+                            '</div><div class="bank-meta">题目数：' + qCount +
+                            '</div><div class="bank-actions"><button class="btn btn-outline btn-xs" data-bid="' +
+                            bank.id + '">查看</button><button class="btn btn-danger btn-xs" data-bid="' +
+                            bank.id + '">删除</button></div></div>';
+                    });
+                    container.innerHTML = html;
+                    container.querySelectorAll('[data-bid]').forEach(function(btn) {
+                        var bid = btn.dataset.bid;
+                        var bank = appData.banks.find(function(b) { return b.id === bid; });
+                        if (!bank) return;
+                        btn.addEventListener('click', function() {
+                            if (this.textContent.indexOf('查看') !== -1) {
+                                viewBankDetail(bid);
+                            } else if (this.textContent.indexOf('删除') !== -1) {
+                                if (confirm('确定要删除题库“' + bank.name + '”及其所有题目吗？')) {
+                                    appData.banks = appData.banks.filter(function(b) { return b.id !==
+                                        bid; });
+                                    saveData(appData);
+                                    renderBanks();
+                                    showToast('已删除', 'success');
+                                }
+                            }
+                        });
+                    });
+                }
+            }
+
+            function viewBankDetail(bid) {
+                var bank = appData.banks.find(function(b) { return b.id === bid; });
+                if (!bank) return;
+                viewingBankId = bid;
+                document.getElementById('bankDetailTitle').textContent = bank.name;
+                var container = document.getElementById('bankQuestionList');
+                if (bank.questions.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><h4>该题库暂无题目</h4></div>';
+                } else {
+                    var html = '';
+                    var typeGroups = {};
+                    bank.questions.forEach(function(q) {
+                        if (!typeGroups[q.type]) typeGroups[q.type] = [];
+                        typeGroups[q.type].push(q);
+                    });
+                    var globalIdx = 1;
+                    var typeOrder = ['single', 'multi', 'judge', 'fill', 'essay'];
+                    typeOrder.forEach(function(type) {
+                        var list = typeGroups[type] || [];
+                        list.forEach(function(q) {
+                            var typeLabel = getTypeLabel(q.type);
+                            var typeCls = q.type;
+                            var displayQuestion = cleanQuestionText(q.question);
+                            var preview = displayQuestion.length > 40 ? displayQuestion.slice(0, 40) +
+                                '...' : displayQuestion;
+                            html +=
+                                '<div class="question-item"><div class="q-info"><span class="q-type ' +
+                                typeCls + '">' + typeLabel + '</span><span class="q-text" data-qid="' +
+                                q.id + '" data-bid="' + bid + '">' + globalIdx + '. ' + preview +
+                                '</span><span style="font-size:12px;color:#7a8b9f;">' + q.score +
+                                '分</span></div><div class="q-actions"><button class="btn btn-warning btn-xs" data-qid="' +
+                                q.id + '" data-bid="' + bid + '">✏️</button><button class="btn btn-danger btn-xs" data-qid="' +
+                                q.id + '" data-bid="' + bid + '">删除</button></div></div>';
+                            globalIdx++;
+                        });
+                    });
+                    container.innerHTML = html;
+                    container.querySelectorAll('.q-text').forEach(function(el) {
+                        el.addEventListener('click', function() {
+                            var qid = this.dataset.qid;
+                            var bid = this.dataset.bid;
+                            openEditQuestion(qid, bid);
+                        });
+                    });
+                    container.querySelectorAll('.q-actions .btn-warning').forEach(function(btn) {
+                        btn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            var qid = this.dataset.qid;
+                            var bid = this.dataset.bid;
+                            openEditQuestion(qid, bid);
+                        });
+                    });
+                    container.querySelectorAll('.q-actions .btn-danger').forEach(function(btn) {
+                        btn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            var qid = this.dataset.qid;
+                            var bid = this.dataset.bid;
+                            if (confirm('确定要删除这道题吗？')) {
+                                var bank = appData.banks.find(function(b) { return b.id === bid; });
+                                if (bank) {
+                                    bank.questions = bank.questions.filter(function(q) { return q
+                                        .id !== qid; });
+                                    saveData(appData);
+                                    viewBankDetail(bid);
+                                    showToast('已删除', 'success');
+                                }
+                            }
+                        });
+                    });
+                }
+                document.getElementById('bankDetail').style.display = 'block';
+                document.getElementById('bankGrid').style.display = 'none';
+                document.getElementById('uploadArea').style.display = 'none';
+                document.getElementById('btnCloseBankDetail').onclick = function() {
+                    document.getElementById('bankDetail').style.display = 'none';
+                    document.getElementById('bankGrid').style.display = 'grid';
+                    renderBanks();
+                };
+            }
+
+            // ---------- 编辑题目 ----------
+            function openEditQuestion(qid, bid) {
+                var bank = appData.banks.find(function(b) { return b.id === bid; });
+                if (!bank) { showToast('题库不存在', 'error'); return; }
+                var q = bank.questions.find(function(q) { return q.id === qid; });
+                if (!q) { showToast('题目不存在', 'error'); return; }
+                editingQuestionId = qid;
+                editingQuestionBankId = bid;
+                document.getElementById('editQType').value = q.type;
+                document.getElementById('editQQuestion').value = q.question;
+                document.getElementById('editQOptions').value = q.options.join('\n');
+                document.getElementById('editQAnswer').value = q.answer;
+                document.getElementById('editQScore').value = q.score;
+                document.getElementById('editQuestionModal').classList.add('active');
+            }
+
+            function closeEditQuestion() {
+                document.getElementById('editQuestionModal').classList.remove('active');
+                editingQuestionId = null;
+                editingQuestionBankId = null;
+            }
+
+            function saveEditQuestion() {
+                var bid = editingQuestionBankId;
+                var qid = editingQuestionId;
+                var bank = appData.banks.find(function(b) { return b.id === bid; });
+                if (!bank) { showToast('题库不存在', 'error'); return; }
+                var q = bank.questions.find(function(q) { return q.id === qid; });
+                if (!q) { showToast('题目不存在', 'error'); return; }
+                var type = document.getElementById('editQType').value;
+                var question = document.getElementById('editQQuestion').value.trim();
+                var optionsText = document.getElementById('editQOptions').value;
+                var options = optionsText.split('\n').map(function(s) { return s.trim(); }).filter(function(s) { return s; });
+                var answer = document.getElementById('editQAnswer').value.trim();
+                var score = parseInt(document.getElementById('editQScore').value) || 5;
+                if (!question) { showToast('请输入题干', 'warning'); return; }
+                if ((type === 'single' || type === 'multi') && options.length < 2) {
+                    showToast('选择题至少需要2个选项', 'warning');
+                    return;
+                }
+                if (!answer) { showToast('请输入答案', 'warning'); return; }
+                q.type = type;
+                q.question = question;
+                q.options = options;
+                q.answer = answer;
+                q.score = score;
+                saveData(appData);
+                closeEditQuestion();
+                viewBankDetail(bid);
+                showToast('题目已更新', 'success');
+            }
+
+            // ---------- 导入 ----------
+            function showImportModal(parsedQuestions) {
+                parsedQuestionsForImport = parsedQuestions;
+                document.getElementById('importCount').textContent = parsedQuestions.length;
+                var select = document.getElementById('importExistingSelect');
+                select.innerHTML = '';
+                appData.banks.forEach(function(bank) {
+                    var opt = document.createElement('option');
+                    opt.value = bank.id;
+                    opt.textContent = bank.name;
+                    select.appendChild(opt);
+                });
+                if (appData.banks.length === 0) {
+                    document.getElementById('importAction').value = 'new';
+                    document.getElementById('importExistingGroup').style.display = 'none';
+                } else {
+                    document.getElementById('importExistingGroup').style.display = 'block';
+                }
+                document.getElementById('importModal').classList.add('active');
+                document.getElementById('importAction').onchange = function() {
+                    if (this.value === 'new') {
+                        document.getElementById('importNewGroup').style.display = 'block';
+                        document.getElementById('importExistingGroup').style.display = 'none';
+                    } else {
+                        document.getElementById('importNewGroup').style.display = 'none';
+                        document.getElementById('importExistingGroup').style.display = 'block';
+                    }
+                };
+                document.getElementById('importAction').dispatchEvent(new Event('change'));
+            }
+
+            function closeImportModal() {
+                document.getElementById('importModal').classList.remove('active');
+                parsedQuestionsForImport = [];
+            }
+
+            function confirmImport() {
+                var action = document.getElementById('importAction').value;
+                var targetBankId = null;
+                if (action === 'new') {
+                    var newName = document.getElementById('importNewName').value.trim();
+                    if (!newName) { showToast('请输入题库名称', 'warning'); return; }
+                    var newBank = { id: genId(), name: newName, questions: [] };
+                    appData.banks.push(newBank);
+                    targetBankId = newBank.id;
+                } else {
+                    targetBankId = document.getElementById('importExistingSelect').value;
+                    if (!targetBankId) { showToast('请选择目标题库', 'warning'); return; }
+                }
+                var bank = appData.banks.find(function(b) { return b.id === targetBankId; });
+                if (!bank) { showToast('目标题库不存在', 'error'); return; }
+                var settings = appData.settings || {};
+                parsedQuestionsForImport.forEach(function(q) {
+                    q.score = getScoreForType(q.type, settings);
+                });
+                bank.questions = bank.questions.concat(parsedQuestionsForImport);
+                saveData(appData);
+                closeImportModal();
+                renderBanks();
+                showToast('成功导入 ' + parsedQuestionsForImport.length + ' 道题到“' + bank.name + '”', 'success');
+            }
+
+            // ---------- 获取分数 ----------
+            function getScoreForType(type, settings) {
+                var map = { single: 'scoreSingle', multi: 'scoreMulti', judge: 'scoreJudge', fill: 'scoreFill',
+                    essay: 'scoreEssay' };
+                var key = map[type];
+                return settings[key] !== undefined ? settings[key] : 5;
+            }
+
+            // ---------- 上传事件 ----------
+            function setupUploadEvents() {
+                var fileInput = document.getElementById('fileUpload');
+                var statusEl = document.getElementById('uploadStatus');
+                if (!fileInput || !statusEl) return;
+                fileInput.onchange = function(e) {
+                    var file = this.files[0];
+                    if (!file) return;
+                    statusEl.textContent = '正在解析...';
+                    var reader = new FileReader();
+                    reader.onload = function(ev) {
+                        try {
+                            var text = ev.target.result;
+                            if (!text.trim()) {
+                                showToast('文件为空', 'error');
+                                statusEl.textContent = '内容为空';
+                                return;
+                            }
+                            var parsed = parseQuestions(text);
+                            if (parsed.length === 0) {
+                                showToast('未识别到有效试题，请检查格式', 'error');
+                                statusEl.textContent = '解析失败';
+                                return;
+                            }
+                            showImportModal(parsed);
+                            statusEl.textContent = '解析完成，共 ' + parsed.length + ' 道题';
+                            fileInput.value = '';
+                        } catch (err) {
+                            showToast('读取文件失败: ' + err.message, 'error');
+                            statusEl.textContent = '读取失败';
+                        }
+                    };
+                    reader.readAsText(file, 'UTF-8');
+                };
+                document.getElementById('btnPasteUpload').onclick = function() {
+                    var text = prompt('请将试题文本粘贴到下方：\n（支持自然格式）', '');
+                    if (text === null) return;
+                    if (!text.trim()) {
+                        showToast('内容为空，请重新输入', 'warning');
+                        return;
+                    }
+                    try {
+                        var parsed = parseQuestions(text);
+                        if (parsed.length === 0) {
+                            showToast('未识别到有效试题，请检查格式', 'error');
+                            return;
+                        }
+                        showImportModal(parsed);
+                    } catch (err) {
+                        showToast('解析出错: ' + err.message, 'error');
+                    }
+                };
+                document.getElementById('btnCancelImport').onclick = function() {
+                    document.getElementById('uploadArea').style.display = 'none';
+                };
+                document.getElementById('btnImport').onclick = function() {
+                    document.getElementById('uploadArea').style.display = 'block';
+                    document.getElementById('bankDetail').style.display = 'none';
+                    document.getElementById('bankGrid').style.display = 'grid';
+                };
+            }
+
+            // ---------- 二维码 ----------
+            function showQRCode(link) {
+                var qrImg = document.getElementById('qrCodeImage');
+                var linkDisplay = document.getElementById('qrLinkDisplay');
+                var encodedLink = encodeURIComponent(link);
+                qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodedLink;
+                linkDisplay.textContent = link;
+                document.getElementById('qrModal').classList.add('active');
+                document.getElementById('qrCopyBtn').onclick = function() {
+                    navigator.clipboard.writeText(link).then(function() {
+                        showToast('链接已复制', 'success');
+                    }).catch(function() {
+                        var input = document.createElement('input');
+                        input.value = link;
+                        document.body.appendChild(input);
+                        input.select();
+                        document.execCommand('copy');
+                        input.remove();
+                        showToast('链接已复制', 'success');
+                    });
+                };
+            }
+
+            function closeQRModal() {
+                document.getElementById('qrModal').classList.remove('active');
+            }
+
+            // ---------- 编码/解码 ----------
+            function encodePaperData(questionIds) {
+                var questions = [];
+                questionIds.forEach(function(id) {
+                    var q = getQuestionById(id);
+                    if (q) questions.push(q);
+                });
+                var json = JSON.stringify(questions);
+                var encoded = btoa(unescape(encodeURIComponent(json)));
+                encoded = encoded.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                return encoded;
+            }
+
+            function decodePaperData(encoded) {
+                try {
+                    var base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+                    while (base64.length % 4) base64 += '=';
+                    var json = decodeURIComponent(escape(atob(base64)));
+                    var questions = JSON.parse(json);
+                    questions.forEach(function(q) { if (!q.id) q.id = genId(); });
+                    return questions;
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function getQuestionById(id) {
+                for (var i = 0; i < appData.banks.length; i++) {
+                    var found = appData.banks[i].questions.find(function(q) { return q.id === id; });
+                    if (found) return found;
+                }
+                return null;
+            }
+
+            function getAllQuestions() {
+                var all = [];
+                appData.banks.forEach(function(bank) { all = all.concat(bank.questions); });
+                return all;
+            }
+
+            // ---------- 组卷 ----------
+            function renderPapers() {
+                var container = document.getElementById('paperList');
+                if (!container) return;
+                if (appData.papers.length === 0) {
+                    container.innerHTML =
+                        '<div class="empty-state"><div class="icon">📄</div><h4>暂无组卷记录</h4><p>点击“新建组卷”从题库中抽取题目生成试卷</p></div>';
+                    return;
+                }
+                var html = '';
+                appData.papers.forEach(function(p) {
+                    var qCount = p.questionIds.length;
+                    var encodedData = encodePaperData(p.questionIds);
+                    var baseUrl = window.location.origin + window.location.pathname;
+                    var link = baseUrl + '?data=' + encodedData;
+                    var bankNames = p.bankIds ? p.bankIds.map(function(id) {
+                        var b = appData.banks.find(function(bk) { return bk.id === id; });
+                        return b ? b.name : '已删除';
+                    }).join('、') : '--';
+                    html +=
+                        '<div class="paper-card"><div class="title">' + p.name +
+                        '</div><div class="meta">题目数：' + qCount + ' ｜ 题库：' + bankNames +
+                        '</div><div class="meta">创建：' + formatTime(p.createTime) +
+                        '</div><div class="actions"><button class="btn btn-warning btn-xs" data-pid="' + p.id +
+                        '">✏️ 编辑</button><button class="btn btn-primary btn-xs" data-link="' + link +
+                        '">🔗 分享</button><button class="btn btn-success btn-xs" data-link="' + link +
+                        '">📱 二维码</button><button class="btn btn-outline btn-xs" data-link="' + link +
+                        '">📋 复制</button><button class="btn btn-danger btn-xs" data-pid="' + p.id +
+                        '">🗑️ 删除</button></div></div>';
+                });
+                container.innerHTML = html;
+                container.querySelectorAll('[data-link]').forEach(function(btn) {
+                    var link = btn.dataset.link;
+                    btn.addEventListener('click', function(e) {
+                        if (this.textContent.indexOf('复制') !== -1) {
+                            navigator.clipboard.writeText(link).then(function() {
+                                showToast('链接已复制到剪贴板', 'success');
+                            }).catch(function() {
+                                var input = document.createElement('input');
+                                input.value = link;
+                                document.body.appendChild(input);
+                                input.select();
+                                document.execCommand('copy');
+                                input.remove();
+                                showToast('链接已复制', 'success');
+                            });
+                        } else if (this.textContent.indexOf('分享') !== -1) {
+                            navigator.clipboard.writeText(link).then(function() {
+                                showToast('链接已复制，可分享给考生', 'success');
+                            }).catch(function() {
+                                var input = document.createElement('input');
+                                input.value = link;
+                                document.body.appendChild(input);
+                                input.select();
+                                document.execCommand('copy');
+                                input.remove();
+                                showToast('链接已复制，可分享给考生', 'success');
+                            });
+                        } else if (this.textContent.indexOf('二维码') !== -1) {
+                            showQRCode(link);
+                        }
+                    });
+                });
+                container.querySelectorAll('[data-pid]').forEach(function(btn) {
+                    var pid = btn.dataset.pid;
+                    var paper = appData.papers.find(function(p) { return p.id === pid; });
+                    if (!paper) return;
+                    btn.addEventListener('click', function() {
+                        if (this.textContent.indexOf('编辑') !== -1) {
+                            loadPaperForEdit(pid);
+                        } else if (this.textContent.indexOf('删除') !== -1) {
+                            if (confirm('确定要删除组卷“' + paper.name + '”吗？')) {
+                                appData.papers = appData.papers.filter(function(p) { return p.id !==
+                                    pid; });
+                                saveData(appData);
+                                renderPapers();
+                                showToast('已删除', 'success');
+                            }
+                        }
+                    });
+                });
+            }
+
+            function loadPaperForEdit(pid) {
+                var paper = appData.papers.find(function(p) { return p.id === pid; });
+                if (!paper) { showToast('组卷不存在', 'error'); return; }
+                editingPaperId = pid;
+                document.getElementById('paperBuilder').style.display = 'block';
+                document.getElementById('paperName').value = paper.name;
+                var selector = document.getElementById('bankSelector');
+                selector.innerHTML = '';
+                if (appData.banks.length === 0) {
+                    selector.innerHTML = '<span style="color:#7a8b9f;">暂无题库</span>';
+                } else {
+                    appData.banks.forEach(function(bank) {
+                        var checked = paper.bankIds.indexOf(bank.id) !== -1 ? 'checked' : '';
+                        var label = document.createElement('label');
+                        label.innerHTML = '<input type="checkbox" value="' + bank.id + '" ' + checked +
+                            ' /> ' + bank.name + ' (' + bank.questions.length + '题)';
+                        selector.appendChild(label);
+                    });
+                }
+                var counts = paper.counts || {};
+                document.getElementById('countSingle').value = counts.single || 0;
+                document.getElementById('countMulti').value = counts.multi || 0;
+                document.getElementById('countJudge').value = counts.judge || 0;
+                document.getElementById('countFill').value = counts.fill || 0;
+                document.getElementById('countEssay').value = counts.essay || 0;
+                var scores = paper.scores || {};
+                document.getElementById('scoreSingle').value = scores.single || 5;
+                document.getElementById('scoreMulti').value = scores.multi || 5;
+                document.getElementById('scoreJudge').value = scores.judge || 5;
+                document.getElementById('scoreFill').value = scores.fill || 5;
+                document.getElementById('scoreEssay').value = scores.essay || 5;
+
+                function updateAvailableCounts() {
+                    var checkedBanks = Array.from(selector.querySelectorAll('input[type="checkbox"]:checked')).map(
+                        function(el) { return el.value; });
+                    var allQuestions = [];
+                    checkedBanks.forEach(function(bid) {
+                        var bank = appData.banks.find(function(b) { return b.id === bid; });
+                        if (bank) allQuestions = allQuestions.concat(bank.questions);
+                    });
+                    var typeCounts = { single: 0, multi: 0, judge: 0, fill: 0, essay: 0 };
+                    allQuestions.forEach(function(q) { if (typeCounts[q.type] !== undefined) typeCounts[q.type]++; });
+                    document.getElementById('availSingle').textContent = typeCounts.single;
+                    document.getElementById('availMulti').textContent = typeCounts.multi;
+                    document.getElementById('availJudge').textContent = typeCounts.judge;
+                    document.getElementById('availFill').textContent = typeCounts.fill;
+                    document.getElementById('availEssay').textContent = typeCounts.essay;
+                }
+                selector.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+                    cb.addEventListener('change', updateAvailableCounts);
+                });
+                updateAvailableCounts();
+                document.getElementById('btnGeneratePaper').onclick = function() { updatePaper(pid); };
+                document.getElementById('btnCancelPaper').onclick = function() {
+                    document.getElementById('paperBuilder').style.display = 'none';
+                    editingPaperId = null;
+                    document.getElementById('btnGeneratePaper').onclick = generatePaper;
+                };
+            }
+
+            function updatePaper(pid) {
+                var paper = appData.papers.find(function(p) { return p.id === pid; });
+                if (!paper) { showToast('组卷不存在', 'error'); return; }
+                var name = document.getElementById('paperName').value.trim();
+                if (!name) { showToast('请输入试卷名称', 'warning'); return; }
+                var selector = document.getElementById('bankSelector');
+                var checkedBanks = Array.from(selector.querySelectorAll('input[type="checkbox"]:checked')).map(function(el) {
+                    return el.value;
+                });
+                if (checkedBanks.length === 0) { showToast('请至少选择一个题库', 'warning'); return; }
+                var allQuestions = [];
+                checkedBanks.forEach(function(bid) {
+                    var bank = appData.banks.find(function(b) { return b.id === bid; });
+                    if (bank) allQuestions = allQuestions.concat(bank.questions);
+                });
+                if (allQuestions.length === 0) { showToast('所选题库暂无题目', 'warning'); return; }
+                var counts = {
+                    single: parseInt(document.getElementById('countSingle').value) || 0,
+                    multi: parseInt(document.getElementById('countMulti').value) || 0,
+                    judge: parseInt(document.getElementById('countJudge').value) || 0,
+                    fill: parseInt(document.getElementById('countFill').value) || 0,
+                    essay: parseInt(document.getElementById('countEssay').value) || 0
+                };
+                if (Object.values(counts).every(function(v) { return v === 0; })) {
+                    showToast('请至少设置一种题型的抽取数量', 'warning');
+                    return;
+                }
+                var typeGroups = { single: [], multi: [], judge: [], fill: [], essay: [] };
+                allQuestions.forEach(function(q) {
+                    if (typeGroups[q.type]) typeGroups[q.type].push(q);
+                });
+                for (var type in counts) {
+                    if (counts[type] > 0 && typeGroups[type].length < counts[type]) {
+                        showToast('题库中“' + getTypeLabel(type) + '”仅有 ' + typeGroups[type].length + ' 题，不足 ' +
+                            counts[type] + ' 题', 'warning');
+                        return;
+                    }
+                }
+                var selectedQuestions = [];
+                for (var type in counts) {
+                    if (counts[type] === 0) continue;
+                    var pool = typeGroups[type];
+                    var shuffled = pool.slice();
+                    for (var i = shuffled.length - 1; i > 0; i--) {
+                        var j = Math.floor(Math.random() * (i + 1));
+                        var tmp = shuffled[i];
+                        shuffled[i] = shuffled[j];
+                        shuffled[j] = tmp;
+                    }
+                    var picked = shuffled.slice(0, counts[type]);
+                    selectedQuestions = selectedQuestions.concat(picked);
+                }
+                var scores = {
+                    single: parseInt(document.getElementById('scoreSingle').value) || 5,
+                    multi: parseInt(document.getElementById('scoreMulti').value) || 5,
+                    judge: parseInt(document.getElementById('scoreJudge').value) || 5,
+                    fill: parseInt(document.getElementById('scoreFill').value) || 5,
+                    essay: parseInt(document.getElementById('scoreEssay').value) || 5
+                };
+                selectedQuestions.forEach(function(q) { q.score = scores[q.type] || 5; });
+                paper.name = name;
+                paper.bankIds = checkedBanks;
+                paper.counts = counts;
+                paper.scores = scores;
+                paper.questionIds = selectedQuestions.map(function(q) { return q.id; });
+                saveData(appData);
+                document.getElementById('paperBuilder').style.display = 'none';
+                editingPaperId = null;
+                document.getElementById('btnGeneratePaper').onclick = generatePaper;
+                renderPapers();
+                showToast('组卷已更新！共 ' + selectedQuestions.length + ' 道题', 'success');
+            }
+
+            function showPaperBuilder() {
+                document.getElementById('paperBuilder').style.display = 'block';
+                document.getElementById('paperName').value = '';
+                editingPaperId = null;
+                var selector = document.getElementById('bankSelector');
+                selector.innerHTML = '';
+                if (appData.banks.length === 0) {
+                    selector.innerHTML = '<span style="color:#7a8b9f;">暂无题库，请先导入试题</span>';
+                } else {
+                    appData.banks.forEach(function(bank) {
+                        var label = document.createElement('label');
+                        label.innerHTML = '<input type="checkbox" value="' + bank.id + '" checked /> ' + bank
+                            .name + ' (' + bank.questions.length + '题)';
+                        selector.appendChild(label);
+                    });
+                }
+                var settings = appData.settings || {};
+                document.getElementById('scoreSingle').value = settings.scoreSingle || 5;
+                document.getElementById('scoreMulti').value = settings.scoreMulti || 5;
+                document.getElementById('scoreJudge').value = settings.scoreJudge || 5;
+                document.getElementById('scoreFill').value = settings.scoreFill || 5;
+                document.getElementById('scoreEssay').value = settings.scoreEssay || 5;
+
+                function updateAvailableCounts() {
+                    var checkedBanks = Array.from(selector.querySelectorAll('input[type="checkbox"]:checked')).map(
+                        function(el) { return el.value; });
+                    var allQuestions = [];
+                    checkedBanks.forEach(function(bid) {
+                        var bank = appData.banks.find(function(b) { return b.id === bid; });
+                        if (bank) allQuestions = allQuestions.concat(bank.questions);
+                    });
+                    var typeCounts = { single: 0, multi: 0, judge: 0, fill: 0, essay: 0 };
+                    allQuestions.forEach(function(q) { if (typeCounts[q.type] !== undefined) typeCounts[q.type]++; });
+                    document.getElementById('availSingle').textContent = typeCounts.single;
+                    document.getElementById('availMulti').textContent = typeCounts.multi;
+                    document.getElementById('availJudge').textContent = typeCounts.judge;
+                    document.getElementById('availFill').textContent = typeCounts.fill;
+                    document.getElementById('availEssay').textContent = typeCounts.essay;
+                }
+                selector.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+                    cb.addEventListener('change', updateAvailableCounts);
+                });
+                updateAvailableCounts();
+                document.getElementById('btnGeneratePaper').onclick = generatePaper;
+                document.getElementById('btnCancelPaper').onclick = function() {
+                    document.getElementById('paperBuilder').style.display = 'none';
+                };
+            }
+
+            function generatePaper() {
+                var name = document.getElementById('paperName').value.trim();
+                if (!name) { showToast('请输入试卷名称', 'warning'); return; }
+                var selector = document.getElementById('bankSelector');
+                var checkedBanks = Array.from(selector.querySelectorAll('input[type="checkbox"]:checked')).map(function(el) {
+                    return el.value;
+                });
+                if (checkedBanks.length === 0) { showToast('请至少选择一个题库', 'warning'); return; }
+                var allQuestions = [];
+                checkedBanks.forEach(function(bid) {
+                    var bank = appData.banks.find(function(b) { return b.id === bid; });
+                    if (bank) allQuestions = allQuestions.concat(bank.questions);
+                });
+                if (allQuestions.length === 0) { showToast('所选题库暂无题目', 'warning'); return; }
+                var counts = {
+                    single: parseInt(document.getElementById('countSingle').value) || 0,
+                    multi: parseInt(document.getElementById('countMulti').value) || 0,
+                    judge: parseInt(document.getElementById('countJudge').value) || 0,
+                    fill: parseInt(document.getElementById('countFill').value) || 0,
+                    essay: parseInt(document.getElementById('countEssay').value) || 0
+                };
+                if (Object.values(counts).every(function(v) { return v === 0; })) {
+                    showToast('请至少设置一种题型的抽取数量', 'warning');
+                    return;
+                }
+                var typeGroups = { single: [], multi: [], judge: [], fill: [], essay: [] };
+                allQuestions.forEach(function(q) {
+                    if (typeGroups[q.type]) typeGroups[q.type].push(q);
+                });
+                for (var type in counts) {
+                    if (counts[type] > 0 && typeGroups[type].length < counts[type]) {
+                        showToast('题库中“' + getTypeLabel(type) + '”仅有 ' + typeGroups[type].length + ' 题，不足 ' +
+                            counts[type] + ' 题', 'warning');
+                        return;
+                    }
+                }
+                var selectedQuestions = [];
+                for (var type in counts) {
+                    if (counts[type] === 0) continue;
+                    var pool = typeGroups[type];
+                    var shuffled = pool.slice();
+                    for (var i = shuffled.length - 1; i > 0; i--) {
+                        var j = Math.floor(Math.random() * (i + 1));
+                        var tmp = shuffled[i];
+                        shuffled[i] = shuffled[j];
+                        shuffled[j] = tmp;
+                    }
+                    var picked = shuffled.slice(0, counts[type]);
+                    selectedQuestions = selectedQuestions.concat(picked);
+                }
+                var scores = {
+                    single: parseInt(document.getElementById('scoreSingle').value) || 5,
+                    multi: parseInt(document.getElementById('scoreMulti').value) || 5,
+                    judge: parseInt(document.getElementById('scoreJudge').value) || 5,
+                    fill: parseInt(document.getElementById('scoreFill').value) || 5,
+                    essay: parseInt(document.getElementById('scoreEssay').value) || 5
+                };
+                selectedQuestions.forEach(function(q) { q.score = scores[q.type] || 5; });
+                var paper = {
+                    id: genId(),
+                    name: name,
+                    bankIds: checkedBanks,
+                    counts: counts,
+                    scores: scores,
+                    questionIds: selectedQuestions.map(function(q) { return q.id; }),
+                    createTime: Date.now()
+                };
+                appData.papers.push(paper);
+                saveData(appData);
+                document.getElementById('paperBuilder').style.display = 'none';
+                renderPapers();
+                showToast('组卷成功！共 ' + selectedQuestions.length + ' 道题', 'success');
+            }
+
+            // ---------- 成绩与排行榜 ----------
+            function renderRecords() {
+                var records = appData.exams || [];
+                var tbody = document.getElementById('recordsBody');
+                var countEl = document.getElementById('recordCount');
+                if (countEl) countEl.textContent = '共 ' + records.length + ' 条记录';
+                if (!tbody) return;
+                if (records.length === 0) {
+                    tbody.innerHTML =
+                        '<tr><td colspan="8" style="text-align:center;padding:30px;color:#7a8b9f;">暂无考试记录</td></tr>';
+                    return;
+                }
+                var sorted = records.slice().sort(function(a, b) { return (b.score || 0) - (a.score || 0); });
+                var html = '';
+                sorted.forEach(function(r, idx) {
+                    var rank = idx + 1;
+                    var rankClass = 'rank';
+                    if (rank === 1) rankClass += ' gold';
+                    else if (rank === 2) rankClass += ' silver';
+                    else if (rank === 3) rankClass += ' bronze';
+                    var pct = r.totalScore > 0 ? Math.round((r.score / r.totalScore) * 100) : 0;
+                    var time = r.endTime ? formatTime(r.endTime) : '--';
+                    html += '<tr><td><span class="' + rankClass + '">' + rank + '</span></td><td>' + (r.project || '--') +
+                        '</td><td>' + (r.name || '--') + '</td><td>' + (r.phone || '--') + '</td><td><strong>' + (r
+                        .score || 0) + '</strong></td><td>' + (r.totalScore || 0) + '</td><td>' + pct +
+                        '%</td><td>' + time + '</td></tr>';
+                });
+                tbody.innerHTML = html;
+                document.getElementById('btnExportCSV').onclick = exportCSV;
+                document.getElementById('btnClearRecords').onclick = function() {
+                    if (records.length === 0) { showToast('暂无记录', 'info'); return; }
+                    if (confirm('确定要清空所有考试记录吗？此操作不可撤销！')) {
+                        appData.exams = [];
+                        saveData(appData);
+                        renderRecords();
+                        showToast('已清空所有记录', 'warning');
+                    }
+                };
+            }
+
+            function exportCSV() {
+                var records = appData.exams || [];
+                if (records.length === 0) { showToast('暂无记录可导出', 'warning'); return; }
+                var csv = '\uFEFF';
+                csv += '排名,项目,姓名,电话,得分,总分,正确率,考试时间\n';
+                var sorted = records.slice().sort(function(a, b) { return (b.score || 0) - (a.score || 0); });
+                sorted.forEach(function(r, idx) {
+                    var pct = r.totalScore > 0 ? Math.round((r.score / r.totalScore) * 100) : 0;
+                    var time = r.endTime ? formatTime(r.endTime) : '--';
+                    csv += (idx + 1) + ',' + (r.project || '') + ',' + (r.name || '') + ',' + (r.phone || '') + ',' + (
+                        r.score || 0) + ',' + (r.totalScore || 0) + ',' + pct + '%,' + time + '\n';
+                });
+                var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                var link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = '考试成绩_' + new Date().toISOString().slice(0, 10) + '.csv';
+                link.click();
+                URL.revokeObjectURL(link.href);
+                showToast('导出成功', 'success');
+            }
+
+            // ---------- 分数设置 ----------
+            function loadScoreSettings() {
+                var settings = appData.settings || {};
+                var ids = ['scoreSingle', 'scoreMulti', 'scoreJudge', 'scoreFill', 'scoreEssay'];
+                var keys = ['scoreSingle', 'scoreMulti', 'scoreJudge', 'scoreFill', 'scoreEssay'];
+                ids.forEach(function(id, i) {
+                    var el = document.getElementById(id);
+                    if (el) el.value = settings[keys[i]] || 5;
+                });
+            }
+
+            function saveScoreSettings() {
+                var settings = appData.settings || {};
+                settings.scoreSingle = parseInt(document.getElementById('scoreSingle').value) || 5;
+                settings.scoreMulti = parseInt(document.getElementById('scoreMulti').value) || 5;
+                settings.scoreJudge = parseInt(document.getElementById('scoreJudge').value) || 5;
+                settings.scoreFill = parseInt(document.getElementById('scoreFill').value) || 5;
+                settings.scoreEssay = parseInt(document.getElementById('scoreEssay').value) || 5;
+                appData.settings = settings;
+                saveData(appData);
+                appData.banks.forEach(function(bank) {
+                    bank.questions.forEach(function(q) {
+                        q.score = getScoreForType(q.type, settings);
+                    });
+                });
+                saveData(appData);
+                renderBanks();
+                showToast('分数设置已保存，并已更新所有题目', 'success');
+            }
+
+            // ---------- 系统设置 ----------
+            function loadSystemSettings() {
+                var settings = appData.settings || {};
+                document.getElementById('adminPassword').value = '';
+                document.getElementById('examTimeLimit').value = settings.examTimeLimit || 0;
+                document.getElementById('examAttemptLimit').value = settings.examAttemptLimit || 0;
+                document.getElementById('showScore').checked = settings.showScore !== undefined ? settings.showScore : true;
+                document.getElementById('showAnswers').checked = settings.showAnswers !== undefined ? settings.showAnswers :
+                    true;
+            }
+
+            function saveSystemSettings() {
+                var settings = appData.settings || {};
+                var newPass = document.getElementById('adminPassword').value.trim();
+                if (newPass) settings.adminPassword = newPass;
+                settings.examTimeLimit = parseInt(document.getElementById('examTimeLimit').value) || 0;
+                settings.examAttemptLimit = parseInt(document.getElementById('examAttemptLimit').value) || 0;
+                settings.showScore = document.getElementById('showScore').checked;
+                settings.showAnswers = document.getElementById('showAnswers').checked;
+                appData.settings = settings;
+                saveData(appData);
+                showToast('系统设置已保存', 'success');
+            }
+
+            function resetSystemSettings() {
+                if (!confirm('确定要恢复默认设置吗？')) return;
+                var def = getDefaultData().settings;
+                var settings = appData.settings || {};
+                settings.adminPassword = def.adminPassword;
+                settings.examTimeLimit = def.examTimeLimit;
+                settings.examAttemptLimit = def.examAttemptLimit;
+                settings.showScore = def.showScore;
+                settings.showAnswers = def.showAnswers;
+                appData.settings = settings;
+                saveData(appData);
+                loadSystemSettings();
+                showToast('已恢复默认设置', 'success');
+            }
+
+            // ---------- 考试 ----------
+            function startExam() {
+                var project = document.getElementById('inputProject').value.trim();
+                var name = document.getElementById('inputName').value.trim();
+                var phone = document.getElementById('inputPhone').value.trim();
+                if (!project) { showToast('请输入项目名称', 'warning'); return; }
+                if (!name) { showToast('请输入姓名', 'warning'); return; }
+                if (!phone) { showToast('请输入电话号码', 'warning'); return; }
+
+                var params = new URLSearchParams(window.location.search);
+                var questions = [];
+                var paperId = 'all';
+                var dataParam = params.get('data');
+                if (dataParam) {
+                    var decoded = decodePaperData(dataParam);
+                    if (decoded && decoded.length > 0) {
+                        questions = decoded;
+                        var settings = appData.settings || {};
+                        questions.forEach(function(q) {
+                            if (!q.score) q.score = getScoreForType(q.type, settings);
+                        });
+                        paperId = 'data_' + Date.now().toString(36);
+                    } else {
+                        showToast('试卷数据无效，请检查链接', 'error');
+                        return;
+                    }
+                } else {
+                    var paperCode = params.get('paper');
+                    if (paperCode) {
+                        var paper = appData.papers.find(function(p) { return p.id === paperCode; });
+                        if (!paper) {
+                            showToast('试卷码无效，请检查链接', 'error');
+                            return;
+                        }
+                        questions = paper.questionIds.map(function(id) { return getQuestionById(id); }).filter(function(q) {
+                            return q;
+                        });
+                        if (questions.length === 0) {
+                            showToast('试卷中没有有效题目，请联系管理员', 'error');
+                            return;
+                        }
+                        paperId = paperCode;
+                    } else {
+                        var all = getAllQuestions();
+                        if (all.length === 0) {
+                            showToast('题库暂无试题，请先导入题目', 'error');
+                            return;
+                        }
+                        questions = all;
+                    }
+                }
+
+                var settings = appData.settings || {};
+                var attemptLimit = settings.examAttemptLimit || 0;
+                if (attemptLimit > 0 && !dataParam) {
+                    var count = getAttemptCount(phone, paperId);
+                    if (count >= attemptLimit) {
+                        showToast('您已参加该考试 ' + count + ' 次，已达上限（' + attemptLimit + '次）', 'error');
+                        return;
+                    }
+                }
+
+                if (!dataParam) {
+                    var saved = loadExamProgress(phone, paperId);
+                    if (saved && saved.questions && saved.questions.length > 0) {
+                        if (confirm('检测到您有未完成的考试（' + saved.questions.length + '题），是否继续？\n点击"确定"继续答题，"取消"重新开始。')) {
+                            currentExam = {
+                                questions: saved.questions,
+                                paperId: paperId,
+                                project: saved.project || project,
+                                user: saved.user,
+                                answers: saved.answers || {},
+                                currentIndex: saved.currentIndex || 0,
+                                startTime: saved.startTime || Date.now(),
+                                timerInterval: null,
+                                submitted: false,
+                                fromData: false
+                            };
+                            switchView('exam');
+                            return;
+                        } else {
+                            clearExamProgress(phone, paperId);
+                        }
+                    }
+                }
+
+                currentExam = {
+                    questions: questions,
+                    paperId: paperId,
+                    project: project,
+                    user: { name: name, phone: phone },
+                    answers: {},
+                    currentIndex: 0,
+                    startTime: Date.now(),
+                    timerInterval: null,
+                    submitted: false,
+                    fromData: !!dataParam
+                };
+                if (!dataParam) {
+                    clearExamProgress(phone, paperId);
+                }
+                switchView('exam');
+            }
+
+            function renderExam() {
+                if (!currentExam) return;
+                var questions = currentExam.questions;
+                var user = currentExam.user;
+                var answers = currentExam.answers;
+                var currentIndex = currentExam.currentIndex;
+                var total = questions.length;
+                document.getElementById('examUserInfo').textContent = '📁 ' + (currentExam.project || '') + ' ｜ 👤 ' + user
+                    .name + ' ｜ 📞 ' + user.phone;
+                document.getElementById('examProgress').textContent = (currentIndex + 1) + ' / ' + total;
+                document.getElementById('examCounter').textContent = '第 ' + (currentIndex + 1) + ' 题 / 共 ' + total + ' 题';
+                updateTimerDisplay();
+
+                var q = questions[currentIndex];
+                var container = document.getElementById('examQuestionContainer');
+                var qType = getTypeLabel(q.type);
+                var qTypeCls = q.type;
+                var savedAns = answers[q.id] || '';
+                var typeGroup = questions.filter(function(qq) { return qq.type === q.type; });
+                var idxInType = typeGroup.findIndex(function(qq) { return qq.id === q.id; }) + 1;
+                var cleanQuestion = cleanQuestionText(q.question);
+
+                var optionsHtml = '';
+                if (q.type === 'single' || q.type === 'multi') {
+                    optionsHtml = '<div class="options">';
+                    q.options.forEach(function(optStr) {
+                        var letterMatch = optStr.match(/^([A-Da-d])[、.．)）]/);
+                        var letter = letterMatch ? letterMatch[1].toUpperCase() : '';
+                        var checked = savedAns.indexOf(letter) !== -1 ? 'checked' : '';
+                        var inputType = q.type === 'single' ? 'radio' : 'checkbox';
+                        var nameAttr = 'q_' + q.id;
+                        var valueAttr = letter;
+                        optionsHtml += '<label><input type="' + inputType + '" name="' + nameAttr + '" value="' +
+                            valueAttr + '" ' + checked + ' /> ' + optStr + '</label>';
+                    });
+                    optionsHtml += '</div>';
+                } else if (q.type === 'judge') {
+                    optionsHtml = '<div class="options"><label><input type="radio" name="q_' + q.id +
+                        '" value="对" ' + (savedAns === '对' ? 'checked' : '') + ' /> ✅ 对</label><label><input type="radio" name="q_' +
+                        q.id + '" value="错" ' + (savedAns === '错' ? 'checked' : '') + ' /> ❌ 错</label></div>';
+                } else if (q.type === 'fill') {
+                    optionsHtml = '<input class="fill-input" type="text" id="fill_' + q.id +
+                        '" placeholder="请输入答案..." value="' + savedAns + '" />';
+                } else if (q.type === 'essay') {
+                    optionsHtml = '<textarea class="essay-textarea" id="essay_' + q.id +
+                        '" placeholder="请在此输入您的回答...">' + savedAns + '</textarea>';
+                }
+
+                container.innerHTML = '<div class="exam-question"><div><span class="q-number">#' + idxInType +
+                    '</span><span class="q-type-tag">' + qType + '</span><span style="font-size:13px;color:#7a8b9f;margin-left:8px;">' +
+                    q.score + '分</span></div><div class="q-body">' + cleanQuestion.replace(/\n/g, '<br />') +
+                    '</div>' + optionsHtml + '</div>';
+
+                // 绑定事件
+                if (q.type === 'single' || q.type === 'judge') {
+                    container.querySelectorAll('input[name="q_' + q.id + '"]').forEach(function(el) {
+                        el.addEventListener('change', function() {
+                            answers[q.id] = this.value;
+                            currentExam.answers = answers;
+                            saveExamProgress();
+                        });
+                    });
+                } else if (q.type === 'multi') {
+                    container.querySelectorAll('input[name="q_' + q.id + '"]').forEach(function(el) {
+                        el.addEventListener('change', function() {
+                            var checked = container.querySelectorAll('input[name="q_' + q.id +
+                                '"]:checked');
+                            var vals = Array.from(checked).map(function(c) { return c.value; }).sort();
+                            answers[q.id] = vals.join(',');
+                            currentExam.answers = answers;
+                            saveExamProgress();
+                        });
+                    });
+                } else if (q.type === 'fill') {
+                    var inp = document.getElementById('fill_' + q.id);
+                    if (inp) {
+                        inp.addEventListener('input', function() {
+                            answers[q.id] = this.value;
+                            currentExam.answers = answers;
+                            saveExamProgress();
+                        });
+                    }
+                } else if (q.type === 'essay') {
+                    var ta = document.getElementById('essay_' + q.id);
+                    if (ta) {
+                        ta.addEventListener('input', function() {
+                            answers[q.id] = this.value;
+                            currentExam.answers = answers;
+                            saveExamProgress();
+                        });
+                    }
+                }
+
+                document.getElementById('btnPrev').disabled = currentIndex === 0;
+                document.getElementById('btnNext').disabled = currentIndex === total - 1;
+                document.getElementById('btnPrev').onclick = function() {
+                    if (currentIndex > 0) { currentExam.currentIndex--;
+                        renderExam(); }
+                };
+                document.getElementById('btnNext').onclick = function() {
+                    if (currentIndex < total - 1) { currentExam.currentIndex++;
+                        renderExam(); }
+                };
+                document.getElementById('btnSubmitExam').onclick = submitExam;
+            }
+
+            function updateTimerDisplay() {
+                var timerEl = document.getElementById('examTimer');
+                if (!timerEl) return;
+                if (!currentExam) return;
+                var settings = appData.settings || {};
+                var limitMinutes = settings.examTimeLimit || 0;
+                if (limitMinutes <= 0) { timerEl.textContent = '⏱️ 不限时'; return; }
+                var elapsed = (Date.now() - currentExam.startTime) / 1000;
+                var remaining = limitMinutes * 60 - elapsed;
+                if (remaining <= 0) {
+                    timerEl.textContent = '⏱️ 时间到！';
+                    if (currentExam && !currentExam.submitted) {
+                        currentExam.submitted = true;
+                        submitExam();
+                    }
+                    return;
+                }
+                var mins = Math.floor(remaining / 60);
+                var secs = Math.floor(remaining % 60);
+                timerEl.textContent = '⏱️ ' + String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+            }
+
+            function startTimer() {
+                if (currentExam && currentExam.timerInterval) { clearInterval(currentExam.timerInterval); }
+                if (!currentExam) return;
+                var settings = appData.settings || {};
+                var limitMinutes = settings.examTimeLimit || 0;
+                if (limitMinutes <= 0) { document.getElementById('examTimer').textContent = '⏱️ 不限时'; return; }
+                currentExam.timerInterval = setInterval(updateTimerDisplay, 1000);
+            }
+
+            function stopTimer() {
+                if (currentExam && currentExam.timerInterval) {
+                    clearInterval(currentExam.timerInterval);
+                    currentExam.timerInterval = null;
+                }
+            }
+
+            function saveExamProgress() {
+                if (!currentExam) return;
+                try {
+                    var key = 'examProgress_' + currentExam.user.phone + '_' + (currentExam.paperId || '');
+                    localStorage.setItem(key, JSON.stringify({
+                        questions: currentExam.questions,
+                        paperId: currentExam.paperId,
+                        project: currentExam.project,
+                        user: currentExam.user,
+                        answers: currentExam.answers,
+                        currentIndex: currentExam.currentIndex,
+                        startTime: currentExam.startTime
+                    }));
+                } catch (_) {}
+            }
+
+            function loadExamProgress(phone, paperId) {
+                try {
+                    var key = 'examProgress_' + phone + '_' + (paperId || '');
+                    var raw = localStorage.getItem(key);
+                    if (raw) {
+                        var data = JSON.parse(raw);
+                        if (data && data.questions && data.questions.length > 0) return data;
+                    }
+                } catch (_) {}
+                return null;
+            }
+
+            function clearExamProgress(phone, paperId) {
+                try { var key = 'examProgress_' + phone + '_' + (paperId || '');
+                    localStorage.removeItem(key); } catch (_) {}
+            }
+
+            function getAttemptCount(phone, paperId) {
+                var key = phone + '_' + (paperId || 'all');
+                return appData.attemptCounts[key] || 0;
+            }
+
+            function incrementAttemptCount(phone, paperId) {
+                var key = phone + '_' + (paperId || 'all');
+                appData.attemptCounts[key] = (appData.attemptCounts[key] || 0) + 1;
+                saveData(appData);
+            }
+
+            function submitExam() {
+                if (!currentExam || currentExam.submitted) return;
+                var questions = currentExam.questions;
+                var user = currentExam.user;
+                var answers = currentExam.answers;
+                var paperId = currentExam.paperId;
+                var project = currentExam.project;
+                var startTime = currentExam.startTime;
+                var fromData = currentExam.fromData;
+
+                var unanswered = questions.filter(function(q) {
+                    var ans = answers[q.id] || '';
+                    return ans.trim() === '';
+                });
+                if (unanswered.length > 0) {
+                    if (!confirm('还有 ' + unanswered.length + ' 道题未作答，确定要交卷吗？')) return;
+                } else {
+                    if (!confirm('确定要交卷吗？提交后不可修改。')) return;
+                }
+
+                currentExam.submitted = true;
+                stopTimer();
+                var result = gradeExam(questions, answers);
+                currentResult = { totalScore: result.totalScore, earnedScore: result.earnedScore, detail: result.detail,
+                    questions: questions, user: user, answers: answers };
+
+                appData.exams.push({
+                    id: genId(),
+                    project: project,
+                    name: user.name,
+                    phone: user.phone,
+                    paperId: paperId || '',
+                    startTime: startTime,
+                    endTime: Date.now(),
+                    score: result.earnedScore,
+                    totalScore: result.totalScore,
+                    answers: answers,
+                    questionScores: result.detail
+                });
+
+                if (!fromData) {
+                    incrementAttemptCount(user.phone, paperId || 'all');
+                }
+                saveData(appData);
+                if (!fromData) {
+                    clearExamProgress(user.phone, paperId);
+                }
+                switchView('result');
+            }
+
+            function renderResult() {
+                if (!currentResult) return;
+                var totalScore = currentResult.totalScore;
+                var earnedScore = currentResult.earnedScore;
+                var detail = currentResult.detail;
+                var questions = currentResult.questions;
+                var user = currentResult.user;
+                var settings = appData.settings || {};
+                var showScore = settings.showScore !== undefined ? settings.showScore : true;
+                var showAnswers = settings.showAnswers !== undefined ? settings.showAnswers : true;
+                var pct = totalScore > 0 ? Math.round((earnedScore / totalScore) * 100) : 0;
+
+                var scoreHtml = '';
+                if (showScore) {
+                    var statusText = '',
+                        statusColor = '';
+                    if (pct >= 80) { statusText = '🌟 优秀！';
+                        statusColor = '#27ae60'; } else if (pct >= 60) { statusText = '👍 良好！';
+                        statusColor = '#4a7cf7'; } else if (pct >= 40) { statusText = '📚 继续加油！';
+                        statusColor = '#f39c12'; } else { statusText = '💪 需要努力！';
+                        statusColor = '#e74c5e'; }
+                    scoreHtml = '<div class="score-circle" style="background:' + statusColor + ';">' + earnedScore +
+                        '<small> / ' + totalScore + '</small></div><div class="result-status" style="color:' +
+                        statusColor + ';">' + statusText + '</div><div class="result-sub">正确率 ' + pct + '%</div>';
+                } else {
+                    scoreHtml = '<div style="padding:20px 0;font-size:20px;color:#1a2b3e;">📋 考试已完成</div><div class="result-sub">成绩暂不显示，请联系管理员</div>';
+                }
+
+                document.getElementById('resultCard').innerHTML = scoreHtml +
+                    '<div class="result-sub">📁 ' + (currentExam.project || '') + ' ｜ ' + user.name + ' ｜ ' + user
+                    .phone + ' ｜ 用时 ' + calcDuration(currentExam ? currentExam.startTime : null) + '</div>';
+
+                var detailHtml = '';
+                if (showAnswers) {
+                    var typeGroups = {};
+                    questions.forEach(function(q) {
+                        if (!typeGroups[q.type]) typeGroups[q.type] = [];
+                        typeGroups[q.type].push(q);
+                    });
+                    var typeOrder = ['single', 'multi', 'judge', 'fill', 'essay'];
+                    var globalIdx = 1;
+                    typeOrder.forEach(function(type) {
+                        var list = typeGroups[type] || [];
+                        list.forEach(function(q) {
+                            var d = detail[q.id] || { earned: 0, correct: false, userAns: '',
+                                correctAns: '' };
+                            var typeLabel = getTypeLabel(q.type);
+                            var statusClass = d.correct ? 'correct' : (d.earned > 0 && d.earned < q
+                                .score ? 'partial' : 'wrong');
+                            var statusText2 = d.correct ? '✅' : (d.earned > 0 && d.earned < q
+                                .score ? '⚠️ 部分' : '❌');
+                            var userAnsDisplay = d.userAns || '(未作答)';
+                            var correctDisplay = q.type === 'essay' ? d.correctAns : (d.correctAns ||
+                                '-');
+                            var cleanQuestion = cleanQuestionText(q.question);
+                            detailHtml += '<div class="detail-item"><div class="d-left"><span style="font-weight:600;">' +
+                                globalIdx + '.</span><span class="d-type">' + typeLabel +
+                                '</span><span style="color:#4a5b6e;font-size:13px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+                                cleanQuestion.slice(0, 30) + (cleanQuestion.length > 30 ? '...' :
+                                '') + '</span></div><div class="d-right ' + statusClass + '">' +
+                                statusText2 + ' ' + d.earned + '/' + q.score +
+                                '分<span style="font-weight:400;font-size:12px;color:#7a8b9f;margin-left:6px;">你的答案: ' +
+                                userAnsDisplay + (q.type !== 'essay' ? '｜正确: ' + correctDisplay :
+                                '') + '</span></div></div>';
+                            globalIdx++;
+                        });
+                    });
+                } else {
+                    detailHtml = '<div style="padding:20px;text-align:center;color:#7a8b9f;">答案详情暂不显示</div>';
+                }
+                document.getElementById('resultDetail').innerHTML = detailHtml;
+
+                document.getElementById('btnReExam').onclick = function() {
+                    if (currentExam) { clearExamProgress(currentExam.user.phone, currentExam.paperId);
+                        stopTimer(); }
+                    currentResult = null;
+                    currentExam = null;
+                    switchView('login');
+                };
+                document.getElementById('btnBackHome').onclick = function() {
+                    if (currentExam) { clearExamProgress(currentExam.user.phone, currentExam.paperId);
+                        stopTimer(); }
+                    currentResult = null;
+                    currentExam = null;
+                    switchView('login');
+                };
+            }
+
+            function calcDuration(startTime) {
+                if (!startTime) return '--';
+                var diff = Date.now() - startTime;
+                var mins = Math.floor(diff / 60000);
+                var secs = Math.floor((diff % 60000) / 1000);
+                if (mins > 0) return mins + '分' + secs + '秒';
+                return secs + '秒';
+            }
+
+            // ---------- 初始化 ----------
+            function init() {
+                if (!appData.settings) {
+                    appData.settings = getDefaultData().settings;
+                    saveData(appData);
+                }
+                if (!appData.attemptCounts) {
+                    appData.attemptCounts = {};
+                    saveData(appData);
+                }
+                appData.banks.forEach(function(b) { if (!b.id) b.id = genId(); });
+                saveData(appData);
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        if (document.getElementById('editQuestionModal').classList.contains('active'))
+                            closeEditQuestion();
+                        if (document.getElementById('importModal').classList.contains('active')) closeImportModal();
+                        if (document.getElementById('qrModal').classList.contains('active')) closeQRModal();
+                    }
+                });
+                switchView('login');
+                // 显示启动成功提示
+                console.log('✅ 智能考试系统启动成功！');
+            }
+
+            // 启动
+            try {
+                init();
+            } catch (e) {
+                console.error('启动失败:', e);
+                document.body.innerHTML =
+                    '<div style="padding:40px;color:#e74c5e;text-align:center;"><h2>⚠️ 系统加载失败</h2><p>请刷新页面或联系管理员。</p><p style="font-size:13px;color:#7a8b9f;">错误信息：' +
+                    e.message + '</p></div>';
+            }
+
+        })();
+    </script>
+</body>
+</html>
